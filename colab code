@@ -1,0 +1,88 @@
+import pandas as pd
+import numpy as np
+import plotly.graph_objs as go
+
+csv_file = 'trendingrec.csv'  # Ensure exact filename, no trailing spaces
+df = pd.read_csv(csv_file)
+
+df.columns = df.columns.str.strip().str.lower()
+df['likes'] = pd.to_numeric(df['likes'], errors='coerce')
+df.dropna(subset=['likes'], inplace=True)
+
+# 3. Fixed layout 
+np.random.seed(42)
+num_lights = len(df_trending)
+x_positions = np.linspace(-5, 5, num_lights)
+baseline_y = 2
+dangling_offsets = np.random.uniform(0.5, 2.5, num_lights)
+y_positions = baseline_y - dangling_offsets
+
+# 4. Bigger stars
+max_likes = df_trending['likes'].max()
+marker_sizes = 20 + 80 * (df_trending['likes'] / max_likes)
+
+# 5. Hover text with description
+hover_texts = [
+    f"App: {df_trending.loc[i, 'space']}<br>"
+    f"Likes: {df_trending.loc[i, 'likes']}<br>"
+    f"Description: {df_trending.loc[i, 'description']}"
+    for i in range(num_lights)
+]
+
+fig = go.Figure()
+
+# Main string line
+fig.add_trace(go.Scatter(
+    x=[-5, 5],
+    y=[baseline_y, baseline_y],
+    mode='lines',
+    line=dict(color='white', width=2),
+    hoverinfo='skip',
+    showlegend=False
+))
+
+# Dangling lines
+for i in range(num_lights):
+    fig.add_shape(
+        type='line',
+        x0=x_positions[i], y0=baseline_y,
+        x1=x_positions[i], y1=y_positions[i],
+        line=dict(color='white', width=1),
+        opacity=0.5
+    )
+
+# Stars
+fig.add_trace(go.Scatter(
+    x=x_positions,
+    y=y_positions,
+    mode='markers',
+    marker=dict(
+        symbol='star',
+        size=marker_sizes,
+        color=df_trending['likes'],
+        colorscale='Rainbow',
+        line=dict(width=1, color='white'),
+        opacity=0.85
+    ),
+    text=hover_texts,
+    hoverinfo='text',
+    showlegend=False
+))
+
+fig.update_layout(
+    title="Top Twelve Trending HF Spaces",
+    xaxis=dict(visible=False),
+    yaxis=dict(visible=False),
+    paper_bgcolor="black",
+    plot_bgcolor="black",
+    width=900,
+    height=600
+)
+
+# 6. HTML
+output_file = "my_christmas_lights.html"
+fig.write_html(output_file, full_html=True, include_plotlyjs='cdn')
+print(f"HTML file saved to {output_file}")
+
+from google.colab import files
+files.download(output_file)
